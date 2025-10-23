@@ -59,7 +59,7 @@ public class PlayerMovement : MonoBehaviour
         {
             StartCoroutine(JumpRoutine());
         }
-        // Atualiza animação de pulo com base no Ground (fallback)
+        // Atualiza animação
         if (animator != null)
             animator.SetBool("IsJumpRight", !isGrounded);
         if (debugLogs)
