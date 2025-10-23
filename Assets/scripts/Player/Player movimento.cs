@@ -10,13 +10,13 @@ public class PlayerMovement : MonoBehaviour
 
     [Header("Pulo")]
     public float jumpForce = 7f;
-    public float airTime = 4f; // tempo que o player fica no ar
+    public float airTime = 0.4f;
     private bool isJumping = false;
 
     [Header("Componentes")]
-    public Rigidbody2D rb;
+    private Rigidbody2D rb;
     private SpriteRenderer sr;
-    private Animator anim;
+    private Animator animator;
 
     [Header("Ground Check")]
     public Transform groundCheck;
@@ -24,52 +24,55 @@ public class PlayerMovement : MonoBehaviour
     public LayerMask groundLayer;
     private bool isGrounded;
 
-    void Start()
+    [Header("Debug")]
+    public bool debugLogs = false;
+
+    private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         sr = GetComponent<SpriteRenderer>();
-        anim = GetComponent<Animator>();
+        animator = GetComponent<Animator>();
     }
 
     void Update()
     {
-        // Verifica se está no chão
-        isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
+        //movimentação
+        moveInput = Input.GetAxisRaw("Horizontal");
 
-        // Movimento lateral
-        if (Input.GetKey(KeyCode.RightArrow))
-        {
-            moveInput = 1;
-            anim.SetBool("IsRight", true);
-        }
-        else if (Input.GetKey(KeyCode.LeftArrow))
-        {
-            moveInput = -1;
-            anim.SetBool("IsRight", false);
-        }
+        // Checa se está no chão 
+        if (groundCheck != null)
+            isGrounded = Physics2D.OverlapCircle(groundCheck.position, groundCheckRadius, groundLayer);
         else
+            isGrounded = false;
+        // Flip
+        if (sr != null)
         {
-            moveInput = 0;
-            anim.SetBool("IsRight", false);
+            if (moveInput > 0) sr.flipX = false;
+            else if (moveInput < 0) sr.flipX = true;
         }
 
-        // Aplica movimento
-        rb.velocity = new Vector2(moveInput * speed, rb.velocity.y);
-
-        // Flip visual
-        sr.flipX = moveInput < 0;
-
-        // Pulo
-        if (Input.GetKeyDown(KeyCode.Space) && !isJumping)
+        //animação
+        if (animator != null)
+            animator.SetBool("IsRunning", moveInput != 0);
+        // Pulo 
+        if (Input.GetKeyDown(KeyCode.Space) && isGrounded && !isJumping)
         {
             StartCoroutine(JumpRoutine());
         }
-
-        // Reset animações de pulo se encostar no chão
-        if (isGrounded && !isJumping)
+        // Atualiza animação de pulo com base no Ground (fallback)
+        if (animator != null)
+            animator.SetBool("IsJumpRight", !isGrounded);
+        if (debugLogs)
         {
-            anim.SetBool("IsJumpRight", false);
-            anim.SetBool("IsJumpLeft", false);
+            Debug.Log($"moveInput: {moveInput}, isGrounded: {isGrounded}, isJumping: {isJumping}");
+        }
+    }
+
+    private void FixedUpdate()
+    {
+        if (rb != null)
+        {
+            rb.velocity = new Vector2(moveInput * speed, rb.velocity.y);
         }
     }
 
@@ -77,32 +80,20 @@ public class PlayerMovement : MonoBehaviour
     {
         isJumping = true;
 
-        // Pulo direcional
-        float jumpX = 0;
-        if (Input.GetKey(KeyCode.RightArrow))
-        {
-            jumpX = speed;
-            anim.SetBool("IsJumpRight", true);
-            anim.SetBool("IsJumpLeft", false);
-        }
-        else if (Input.GetKey(KeyCode.LeftArrow))
-        {
-            jumpX = -speed;
-            anim.SetBool("IsJumpLeft", true);
-            anim.SetBool("IsJumpRight", false);
-        }
+        if (animator != null)
+            animator.SetBool("IsJumpRight", true);
 
-        rb.velocity = new Vector2(jumpX, jumpForce);
-
-        // Mantém no ar por "airTime" segundos
+        if (rb != null)
+        {
+            rb.velocity = new Vector2(rb.velocity.x, jumpForce);
+        }
         yield return new WaitForSeconds(airTime);
 
-        // Cai de volta
-        rb.velocity = new Vector2(rb.velocity.x, -jumpForce);
-
         isJumping = false;
-    }
 
+        if (animator != null)
+            animator.SetBool("IsJumpRight", false);
+    }
     private void OnDrawGizmosSelected()
     {
         if (groundCheck == null) return;
@@ -110,4 +101,3 @@ public class PlayerMovement : MonoBehaviour
         Gizmos.DrawWireSphere(groundCheck.position, groundCheckRadius);
     }
 }
-
