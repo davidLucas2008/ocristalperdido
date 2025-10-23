@@ -8,6 +8,7 @@ TagManager:
   - Arbustos
   - Arvores
   - chao
+  - Grounded
   layers:
   - Default
   - TransparentFX
