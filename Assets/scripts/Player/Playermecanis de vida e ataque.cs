@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.SceneManagement; // <- necessário para trocar de cena
 
 public class PlayerCombat : MonoBehaviour
 {
@@ -23,8 +24,8 @@ public class PlayerCombat : MonoBehaviour
         // Detecta colisão com inimigo
         if (collision.gameObject.CompareTag("Enemy"))
         {
-            Enemy inimigo = collision.gameObject.GetComponent<Enemy>();
-            if (inimigo == null) return;
+            EnemyAttack enemy = collision.gameObject.GetComponent<EnemyAttack>();
+            if (enemy == null) return;
 
             // Pega o ponto de contato mais próximo
             ContactPoint2D contato = collision.contacts[0];
@@ -35,14 +36,14 @@ public class PlayerCombat : MonoBehaviour
             if (hitFromAbove)
             {
                 // Player acerta o inimigo e rebate pra cima
-                inimigo.TakeDamage(1);
+                enemy.TakeDamageEnemy(1);
                 rb.velocity = new Vector2(rb.velocity.x, bounceForce);
                 Debug.Log("🦘 Player pulou sobre o inimigo!");
             }
             else
             {
                 // Player leva dano ao tocar de lado ou por baixo
-                TakeDamage(inimigo.damageToPlayer);
+                TakeDamage(enemy.damageToPlayer);
             }
         }
     }
@@ -63,7 +64,8 @@ public class PlayerCombat : MonoBehaviour
     void Die()
     {
         Debug.Log("☠️ Player morreu!");
-       
+        SceneManager.LoadScene("game over"); // <- Nome da cena de Game Over
     }
 }
+
 
